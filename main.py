@@ -4,7 +4,7 @@ import seaborn as sns
 from scipy import stats
 import matplotlib
 
-# Указываем, что нужно использовать QtAgg для корректного вывода в PyCharm
+# Используем QtAgg для корректного отображения в PyCharm
 matplotlib.use('QtAgg')
 
 
@@ -13,13 +13,14 @@ def generate_samples():
     normal_samples = {size: np.random.normal(loc=0, scale=1, size=size) for size in sample_sizes}
     uniform_samples = {size: np.random.uniform(low=-2, high=2, size=size) for size in sample_sizes}
     binomial_samples = {size: np.random.binomial(n=10, p=0.5, size=size) for size in sample_sizes}
-    return normal_samples, uniform_samples, binomial_samples
+    exponential_samples = {size: np.random.exponential(scale=1, size=size) for size in sample_sizes}
+    return normal_samples, uniform_samples, binomial_samples, exponential_samples
 
 
 def descriptive_statistics(sample):
     """ Возвращает статистические показатели """
     mean = np.mean(sample)
-    mode = stats.mode(sample, keepdims=True)[0][0]
+    mode = stats.mode(sample, keepdims=True).mode[0]
     median = np.median(sample)
     range_ = np.ptp(sample)
     variance_biased = np.var(sample)
@@ -27,7 +28,7 @@ def descriptive_statistics(sample):
     quartiles = np.percentile(sample, [25, 50, 75])
     interquartile_range = quartiles[2] - quartiles[0]
 
-    stats_dict = {
+    return {
         "Mean": mean,
         "Mode": mode,
         "Median": median,
@@ -39,15 +40,14 @@ def descriptive_statistics(sample):
         "Q3": quartiles[2],
         "IQR": interquartile_range
     }
-    return stats_dict
 
 
 def plot_graphs(sample, sample_size, dist_type):
-    """ Строит таблицу и графики """
-    stats_values = descriptive_statistics(sample)  # Вычисляем статистику
+    """ Строит гистограмму, полигон частот и ECDF """
+    stats_values = descriptive_statistics(sample)
     stats_text = "\n".join([f"{key}: {value:.3f}" for key, value in stats_values.items()])
 
-    fig, axs = plt.subplots(1, 2, figsize=(12, 5))  # Два графика на одной строке
+    fig, axs = plt.subplots(1, 3, figsize=(18, 5))  # 3 графика в ряд
 
     # 1️⃣ Гистограмма
     sns.histplot(sample, bins=30, kde=True, ax=axs[0])
@@ -55,16 +55,30 @@ def plot_graphs(sample, sample_size, dist_type):
     axs[0].set_xlabel("Values")
     axs[0].set_ylabel("Density")
 
-    # 2️⃣ ECDF-график
-    sns.ecdfplot(sample, ax=axs[1])
-    axs[1].set_title(f"ECDF - {dist_type} (size={sample_size})")
+    # Добавляем вертикальные линии для статистик
+    axs[0].axvline(stats_values["Mean"], color='r', linestyle='dashed', label='Mean')
+    axs[0].axvline(stats_values["Median"], color='g', linestyle='dashed', label='Median')
+    axs[0].axvline(stats_values["Mode"], color='b', linestyle='dashed', label='Mode')
+    axs[0].legend()
+
+    # 2️⃣ Полигон частот
+    counts, bin_edges = np.histogram(sample, bins=30)
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+    axs[1].plot(bin_centers, counts, marker='o', linestyle='-', color='purple')
+    axs[1].set_title(f"Frequency Polygon - {dist_type} (size={sample_size})")
     axs[1].set_xlabel("Values")
-    axs[1].set_ylabel("Cumulative Probability")
+    axs[1].set_ylabel("Frequency")
+
+    # 3️⃣ ECDF-график
+    sns.ecdfplot(sample, ax=axs[2])
+    axs[2].set_title(f"ECDF - {dist_type} (size={sample_size})")
+    axs[2].set_xlabel("Values")
+    axs[2].set_ylabel("Cumulative Probability")
 
     # Вывод таблицы статистики
     plt.figtext(0.92, 0.5, stats_text, fontsize=10, bbox=dict(facecolor='white', alpha=0.5))
 
-    plt.show()  # Ожидание закрытия окна перед продолжением
+    plt.show()
 
 
 def check_sigma_rule(sample):
@@ -83,20 +97,20 @@ def check_sigma_rule(sample):
 
 
 # Генерация данных
-normal_samples, uniform_samples, binomial_samples = generate_samples()
+normal_samples, uniform_samples, binomial_samples, exponential_samples = generate_samples()
 
-# Объединяем все типы выборок в один словарь
 distributions = {
     "Normal": normal_samples,
     "Uniform": uniform_samples,
-    "Binomial": binomial_samples
+    "Binomial": binomial_samples,
+    "Exponential": exponential_samples
 }
 
-# Цикл по распределениям и размерам выборок
 for dist_name, samples in distributions.items():
     for sample_size, sample in samples.items():
         print(f"\n📌 {dist_name} Distribution, Sample Size: {sample_size}")
-        plot_graphs(sample, sample_size, dist_name)  # Вывод графиков
+        plot_graphs(sample, sample_size, dist_name)
 
         if dist_name == "Normal":
-            check_sigma_rule(sample)  # Проверка правила 3 сигм
+            check_sigma_rule(sample)
+
