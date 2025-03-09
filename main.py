@@ -7,7 +7,6 @@ import matplotlib
 # Используем QtAgg для корректного отображения в PyCharm
 matplotlib.use('QtAgg')
 
-
 def generate_samples():
     sample_sizes = [20, 50, 100, 1000]
     normal_samples = {size: np.random.normal(loc=0, scale=1, size=size) for size in sample_sizes}
@@ -16,9 +15,7 @@ def generate_samples():
     exponential_samples = {size: np.random.exponential(scale=1, size=size) for size in sample_sizes}
     return normal_samples, uniform_samples, binomial_samples, exponential_samples
 
-
 def descriptive_statistics(sample):
-    """ Возвращает статистические показатели """
     mean = np.mean(sample)
     mode = stats.mode(sample, keepdims=True).mode[0]
     median = np.median(sample)
@@ -40,15 +37,11 @@ def descriptive_statistics(sample):
         "IQR": interquartile_range
     }
 
-
 def plot_graphs(sample, sample_size, dist_type):
-    """ Строит гистограмму, полигон частот и ECDF """
     stats_values = descriptive_statistics(sample)
     stats_text = "\n".join([f"{key}: {value:.3f}" for key, value in stats_values.items()])
-
     fig, axs = plt.subplots(1, 3, figsize=(18, 5))
 
-    # Гистограмма
     sns.histplot(sample, bins=30, kde=True, ax=axs[0])
     axs[0].set_title(f"Histogram - {dist_type} (size={sample_size})")
     axs[0].axvline(stats_values["Mean"], color='r', linestyle='dashed', label='Mean')
@@ -56,22 +49,18 @@ def plot_graphs(sample, sample_size, dist_type):
     axs[0].axvline(stats_values["Mode"], color='b', linestyle='dashed', label='Mode')
     axs[0].legend()
 
-    # Полигон частот
     counts, bin_edges = np.histogram(sample, bins=30)
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
     axs[1].plot(bin_centers, counts, marker='o', linestyle='-', color='purple')
     axs[1].set_title(f"Frequency Polygon - {dist_type} (size={sample_size})")
 
-    # ECDF-график
     sns.ecdfplot(sample, ax=axs[2])
     axs[2].set_title(f"ECDF - {dist_type} (size={sample_size})")
 
     plt.figtext(0.92, 0.5, stats_text, fontsize=10, bbox=dict(facecolor='white', alpha=0.5))
     plt.show()
 
-
 def check_sigma_rule(sample):
-    """ Проверяет правило 3-х сигм """
     mean = np.mean(sample)
     std_dev = np.std(sample)
     within_1_sigma = np.sum((sample >= mean - std_dev) & (sample <= mean + std_dev)) / len(sample)
@@ -82,8 +71,6 @@ def check_sigma_rule(sample):
     print(f"  🔹 Within 2σ: {within_2_sigma * 100:.2f}%")
     print(f"  🔹 Within 3σ: {within_3_sigma * 100:.2f}%")
 
-
-# Генерация данных
 normal_samples, uniform_samples, binomial_samples, exponential_samples = generate_samples()
 
 distributions = {
@@ -99,3 +86,4 @@ for dist_name, samples in distributions.items():
         plot_graphs(sample, sample_size, dist_name)
         if dist_name == "Normal":
             check_sigma_rule(sample)
+
