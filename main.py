@@ -13,7 +13,8 @@ def generate_samples():
     uniform_samples = {size: np.random.uniform(low=-2, high=2, size=size) for size in sample_sizes}
     binomial_samples = {size: np.random.binomial(n=10, p=0.5, size=size) for size in sample_sizes}
     exponential_samples = {size: np.random.exponential(scale=1, size=size) for size in sample_sizes}
-    return normal_samples, uniform_samples, binomial_samples, exponential_samples
+    poisson_samples = {size: np.random.poisson(lam=3, size=size) for size in sample_sizes}  # Добавлен Пуассон
+    return normal_samples, uniform_samples, binomial_samples, exponential_samples, poisson_samples
 
 def descriptive_statistics(sample):
     mean = np.mean(sample)
@@ -40,50 +41,92 @@ def descriptive_statistics(sample):
 def plot_graphs(sample, sample_size, dist_type):
     stats_values = descriptive_statistics(sample)
     stats_text = "\n".join([f"{key}: {value:.3f}" for key, value in stats_values.items()])
+
     fig, axs = plt.subplots(1, 3, figsize=(18, 5))
 
+    # Гистограмма
     sns.histplot(sample, bins=30, kde=True, ax=axs[0])
     axs[0].set_title(f"Histogram - {dist_type} (size={sample_size})")
-    axs[0].axvline(stats_values["Mean"], color='r', linestyle='dashed', label='Mean')
-    axs[0].axvline(stats_values["Median"], color='g', linestyle='dashed', label='Median')
-    axs[0].axvline(stats_values["Mode"], color='b', linestyle='dashed', label='Mode')
+    axs[0].set_xlabel("Values")
+    axs[0].set_ylabel("Density")
+    axs[0].axvline(stats_values["Mean"], color='r', linestyle='dashed', label=f'Mean: {stats_values["Mean"]:.2f}')
+    axs[0].axvline(stats_values["Median"], color='g', linestyle='dashed', label=f'Median: {stats_values["Median"]:.2f}')
+    axs[0].axvline(stats_values["Mode"], color='b', linestyle='dashed', label=f'Mode: {stats_values["Mode"]:.2f}')
     axs[0].legend()
 
+    # Полигон частот
     counts, bin_edges = np.histogram(sample, bins=30)
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
     axs[1].plot(bin_centers, counts, marker='o', linestyle='-', color='purple')
     axs[1].set_title(f"Frequency Polygon - {dist_type} (size={sample_size})")
+    axs[1].set_xlabel("Values")
+    axs[1].set_ylabel("Frequency")
 
+    # ECDF-график
     sns.ecdfplot(sample, ax=axs[2])
     axs[2].set_title(f"ECDF - {dist_type} (size={sample_size})")
+    axs[2].set_xlabel("Values")
+    axs[2].set_ylabel("Cumulative Probability")
 
+    # Вывод таблицы статистики
     plt.figtext(0.92, 0.5, stats_text, fontsize=10, bbox=dict(facecolor='white', alpha=0.5))
+
     plt.show()
 
-def check_sigma_rule(sample):
+def check_sigma_rule(sample, ax):
     mean = np.mean(sample)
     std_dev = np.std(sample)
     within_1_sigma = np.sum((sample >= mean - std_dev) & (sample <= mean + std_dev)) / len(sample)
     within_2_sigma = np.sum((sample >= mean - 2 * std_dev) & (sample <= mean + 2 * std_dev)) / len(sample)
     within_3_sigma = np.sum((sample >= mean - 3 * std_dev) & (sample <= mean + 3 * std_dev)) / len(sample)
-    print(f"📊 Rule of 3 Sigma for Normal Distribution:")
-    print(f"  🔹 Within 1σ: {within_1_sigma * 100:.2f}%")
-    print(f"  🔹 Within 2σ: {within_2_sigma * 100:.2f}%")
-    print(f"  🔹 Within 3σ: {within_3_sigma * 100:.2f}%")
 
-normal_samples, uniform_samples, binomial_samples, exponential_samples = generate_samples()
+    sigma_text = (
+        f"Rule of 3 Sigma:\n"
+        f"Within 1σ: {within_1_sigma * 100:.2f}%\n"
+        f"Within 2σ: {within_2_sigma * 100:.2f}%\n"
+        f"Within 3σ: {within_3_sigma * 100:.2f}%"
+    )
+
+    ax.text(0.05, 0.95, sigma_text, transform=ax.transAxes, fontsize=10,
+            verticalalignment='top', bbox=dict(facecolor='white', alpha=0.5))
+
+normal_samples, uniform_samples, binomial_samples, exponential_samples, poisson_samples = generate_samples()
 
 distributions = {
     "Normal": normal_samples,
     "Uniform": uniform_samples,
     "Binomial": binomial_samples,
-    "Exponential": exponential_samples
+    "Exponential": exponential_samples,
+    "Poisson": poisson_samples  # Добавлено Пуассоновское распределение
 }
 
 for dist_name, samples in distributions.items():
     for sample_size, sample in samples.items():
         print(f"\n📌 {dist_name} Distribution, Sample Size: {sample_size}")
-        plot_graphs(sample, sample_size, dist_name)
-        if dist_name == "Normal":
-            check_sigma_rule(sample)
+        fig, axs = plt.subplots(1, 3, figsize=(18, 5))  # Один раз создаем фигуру
 
+        # Гистограмма
+        sns.histplot(sample, bins=30, kde=True, ax=axs[0])
+        axs[0].set_title(f"Histogram - {dist_name} (size={sample_size})")
+        axs[0].set_xlabel("Values")
+        axs[0].set_ylabel("Density")
+
+        # Полигон частот
+        counts, bin_edges = np.histogram(sample, bins=30)
+        bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+        axs[1].plot(bin_centers, counts, marker='o', linestyle='-', color='purple')
+        axs[1].set_title(f"Frequency Polygon - {dist_name} (size={sample_size})")
+        axs[1].set_xlabel("Values")
+        axs[1].set_ylabel("Frequency")
+
+        # ECDF-график
+        sns.ecdfplot(sample, ax=axs[2])
+        axs[2].set_title(f"ECDF - {dist_name} (size={sample_size})")
+        axs[2].set_xlabel("Values")
+        axs[2].set_ylabel("Cumulative Probability")
+
+        # Добавление правила 3-х сигм
+        if dist_name == "Normal":
+            check_sigma_rule(sample, axs[2])
+
+        plt.show()
