@@ -14,6 +14,7 @@ def generate_samples():
     uniform_samples = {size: np.random.uniform(low=-2, high=2, size=size) for size in sample_sizes}
     binomial_samples = {size: np.random.binomial(n=10, p=0.5, size=size) for size in sample_sizes}
     exponential_samples = {size: np.random.exponential(scale=1, size=size) for size in sample_sizes}
+
     return normal_samples, uniform_samples, binomial_samples, exponential_samples
 
 
@@ -78,7 +79,7 @@ def plot_graphs(sample, sample_size, dist_type):
     # Вывод таблицы статистики
     plt.figtext(0.92, 0.5, stats_text, fontsize=10, bbox=dict(facecolor='white', alpha=0.5))
 
-    plt.show()
+    plt.show()  # Ожидание закрытия окна перед продолжением
 
 
 def check_sigma_rule(sample):
@@ -99,6 +100,7 @@ def check_sigma_rule(sample):
 # Генерация данных
 normal_samples, uniform_samples, binomial_samples, exponential_samples = generate_samples()
 
+# Объединяем все типы выборок в один словарь
 distributions = {
     "Normal": normal_samples,
     "Uniform": uniform_samples,
@@ -106,11 +108,13 @@ distributions = {
     "Exponential": exponential_samples
 }
 
+# Цикл по распределениям и размерам выборок
 for dist_name, samples in distributions.items():
     for sample_size, sample in samples.items():
         print(f"\n📌 {dist_name} Distribution, Sample Size: {sample_size}")
-        plot_graphs(sample, sample_size, dist_name)
+        plot_graphs(sample, sample_size, dist_name)  # Вывод графиков
 
         if dist_name == "Normal":
-            check_sigma_rule(sample)
+            check_sigma_rule(sample)  # Проверка правила 3 сигм
+
 
